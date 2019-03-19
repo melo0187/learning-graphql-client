@@ -8,7 +8,15 @@ import { persistCache } from 'apollo-cache-persist'
 const cache = new InMemoryCache()
 const client = new ApolloClient({
   cache: cache,
-  uri: 'http://localhost:4000/graphql'
+  uri: 'http://localhost:4000/graphql',
+  request: operation => {
+    operation.setContext(context => ({
+      headers: {
+        ...context.headers,
+        authorization: localStorage.getItem('token')
+      }
+    }))
+  }
 })
 
 const setupAndRender = async () => {
