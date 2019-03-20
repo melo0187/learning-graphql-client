@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { withRouter } from 'react-router-dom'
-import { Mutation, Query } from 'react-apollo'
+import { Mutation, Query, withApollo, compose } from 'react-apollo'
 import { gql } from 'apollo-boost'
 import { ROOT_QUERY } from './App'
 
@@ -14,8 +14,8 @@ const GITHUB_AUTH_MUTATION = gql`
 
 const Me = ({ logout, requestCode, signingIn }) =>
   <Query query={ROOT_QUERY}>
-    {({ loading, data, refetch }) => data.me ?
-      <CurrentUser {...data.me} logout={logout} refetch={refetch} /> :
+    {({ loading, data }) => data.me ?
+      <CurrentUser {...data.me} logout={logout} /> :
       loading ?
         <p>loading...</p> :
         <button
@@ -26,14 +26,11 @@ const Me = ({ logout, requestCode, signingIn }) =>
     }
   </Query>
 
-const CurrentUser = ({ name, avatar, logout, refetch }) =>
+const CurrentUser = ({ name, avatar, logout }) =>
   <div>
     <img src={avatar} width={48} height={48} alt="current user avatar" />
     <h1>{name}</h1>
-    <button onClick={() => {
-      logout()
-      refetch()
-    }}>logout</button>
+    <button onClick={logout}>logout</button>
   </div >
 
 class AuthorizedUser extends Component {
@@ -59,6 +56,13 @@ class AuthorizedUser extends Component {
       `https://github.com/login/oauth/authorize?client_id=${clientID}&scope=user`
   }
 
+  logout = () => {
+    localStorage.removeItem('token')
+    let data = this.props.client.readQuery({ query: ROOT_QUERY })
+    data.me = null
+    this.props.client.writeQuery({ query: ROOT_QUERY, data })
+  }
+
   render() {
     return (
       <Mutation mutation={GITHUB_AUTH_MUTATION}
@@ -69,7 +73,7 @@ class AuthorizedUser extends Component {
           return (
             <Me signingIn={this.state.signingIn}
               requestCode={this.requestCode}
-              logout={() => localStorage.removeItem('token')} />
+              logout={this.logout} />
           )
         }}
 
@@ -78,4 +82,4 @@ class AuthorizedUser extends Component {
   }
 }
 
-export default withRouter(AuthorizedUser)
+export default compose(withApollo, withRouter)(AuthorizedUser)
