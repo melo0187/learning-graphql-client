@@ -9,7 +9,7 @@ const Photos = () =>
       data.allPhotos.map(photo =>
         <img
           key={photo.id}
-          src={photo.url}
+          src={`http://localhost:4000${photo.url}`}
           alt={photo.name}
           width={350} />
       )
